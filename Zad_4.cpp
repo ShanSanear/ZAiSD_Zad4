@@ -13,6 +13,8 @@
 
 const bool DEBUG = true;
 
+int **initialize_matrix(int num_of_vectors);
+
 class Graph {
 
 public:
@@ -27,20 +29,23 @@ public:
 
     void deallocate_memory();
 
+
+    void check_distances(int src);
+
 private:
     /// Matrix to be searched
     int **matrix;
-    /// Distances matrix
-    int **matrix_distances;
     /// How many edges has already been loaded
-    int vertex_count = 0;
-    int number_of_edges = 0;
+    int vertex_count;
+    int number_of_edges;
 
     void add_edge(int vertex_u, int vertex_v, int weight);
 
+    void initialize_matrices();
 
     int **initialize_matrix(int init_value) const;
 
+    int minimum_distance(const int p_int[], const bool p_boolean[]);
 };
 
 
@@ -64,10 +69,9 @@ void Graph::show_graph_matrix() {
 void Graph::load_graph_matrix_from_stdin() {
     std::string line;
     std::vector<std::vector<int>> input_data;
-    int num_of_vectors;
     std::getline(std::cin, line);
     int space_index = line.find(' ');
-    num_of_vectors = std::stoi(line.substr(0, space_index));
+    vertex_count = std::stoi(line.substr(0, space_index));
     number_of_edges = std::stoi(line.substr(space_index + 1, line.size()));
     initialize_matrices();
     for (int i = 0; i < number_of_edges; i++) {
@@ -79,7 +83,7 @@ void Graph::load_graph_matrix_from_stdin() {
             int number = std::stoi(provided_number);
             row.push_back(number);
         }
-        add_edge(row[0]-1, row[1]-1, row[2]);
+        add_edge(row[0] - 1, row[1] - 1, row[2]);
     }
 }
 
@@ -105,6 +109,45 @@ void Graph::deallocate_memory() {
     delete[] matrix;
 }
 
+void Graph::check_distances(int src) {
+    int dist[vertex_count];
+    bool visited[vertex_count];
+    for (int i=0; i < vertex_count; i++) {
+        dist[i]=INT_MAX;
+        visited[i] = false;
+    }
+    dist[src] = 0;
+    for (int j=1; j < vertex_count; j++) {
+        int u = minimum_distance(dist, visited);
+        visited[u] = true;
+        for (int v = 0; v < vertex_count; v++) {
+            if(!visited[v] && matrix[u][v] && dist[u]+matrix[u][v] < dist[v]) {
+                dist[v] = dist[u]+matrix[u][v];
+            }
+        }
+    }
+    printf("Shortest paths:\n");
+    for (int i=0; i < vertex_count; i++) {
+        if (i != src) {
+            printf("Source: %d \t Destination: %d \t Minimum cost is: %d\n",
+                   src+1, i+1, dist[i]);
+        }
+    }
+    
+}
+
+int Graph::minimum_distance(const int *dist, const bool *visited) {
+    int min = INT_MAX;
+    int index;
+    for (int v = 0; v < vertex_count; v++) {
+        if (!visited[v] && dist[v] <= min) {
+            min = dist[v];
+            index = v;
+        }
+    }
+    return index;
+}
+
 
 Graph::Graph() = default;
 
@@ -120,8 +163,9 @@ int main() {
         if (DEBUG) {
             graph.show_graph_matrix();
         }
+        graph.check_distances(0);
         graph.deallocate_memory();
-        if (case_num != number_of_cases-1) {
+        if (case_num != number_of_cases - 1) {
             printf("\n");
         }
     }
