@@ -13,8 +13,6 @@
 
 const bool DEBUG = true;
 
-int **initialize_matrix(int num_of_vectors);
-
 class Graph {
 
 public:
@@ -30,7 +28,7 @@ public:
     void deallocate_memory();
 
 
-    void check_distances(int src);
+    void check_distances(int src_node);
 
 private:
     /// Matrix to be searched
@@ -45,7 +43,7 @@ private:
 
     int **initialize_matrix(int init_value) const;
 
-    int minimum_distance(const int p_int[], const bool p_boolean[]);
+    int find_node_with_minimum_distance(const int distance[], const bool p_boolean[]) const;
 };
 
 
@@ -109,42 +107,53 @@ void Graph::deallocate_memory() {
     delete[] matrix;
 }
 
-void Graph::check_distances(int src) {
+void Graph::check_distances(int src_node) {
     int dist[vertex_count];
     bool visited[vertex_count];
     for (int i=0; i < vertex_count; i++) {
         dist[i]=INT_MAX;
         visited[i] = false;
     }
-    dist[src] = 0;
-    for (int j=1; j < vertex_count; j++) {
-        int u = minimum_distance(dist, visited);
-        visited[u] = true;
-        for (int v = 0; v < vertex_count; v++) {
-            if(!visited[v] && matrix[u][v] && dist[u]+matrix[u][v] < dist[v]) {
-                dist[v] = dist[u]+matrix[u][v];
+    dist[src_node] = 0;
+
+    for (int ending_vertex=0; ending_vertex < vertex_count; ending_vertex++) {
+        std::vector<int> search_path;
+        search_path.push_back(src_node);
+        int min_distance_node = find_node_with_minimum_distance(dist, visited);
+        visited[min_distance_node] = true;
+        for (int target_node = 0; target_node < vertex_count; target_node++) {
+            if(!visited[target_node] && matrix[min_distance_node][target_node]
+               && dist[min_distance_node] + matrix[min_distance_node][target_node] < dist[target_node]) {
+                dist[target_node] = dist[min_distance_node] + matrix[min_distance_node][target_node];
+                search_path.push_back(min_distance_node);
             }
         }
+        printf("Path for %d -> %d\n", src_node + 1, ending_vertex + 1);
+        for (int p : search_path) {
+            printf("%*d\t", 2, p+1);
+        }
+        printf("\n");
     }
     printf("Shortest paths:\n");
     for (int i=0; i < vertex_count; i++) {
-        if (i != src) {
+        if (i != src_node) {
             printf("Source: %d \t Destination: %d \t Minimum cost is: %d\n",
-                   src+1, i+1, dist[i]);
+                   src_node + 1, i + 1, dist[i]);
         }
     }
     
 }
 
-int Graph::minimum_distance(const int *dist, const bool *visited) {
+int Graph::find_node_with_minimum_distance(const int *distance, const bool *visited) const {
     int min = INT_MAX;
     int index;
     for (int v = 0; v < vertex_count; v++) {
-        if (!visited[v] && dist[v] <= min) {
-            min = dist[v];
+        if (!visited[v] && distance[v] <= min) {
+            min = distance[v];
             index = v;
         }
     }
+    printf("Index: %d\n", index+1);
     return index;
 }
 
