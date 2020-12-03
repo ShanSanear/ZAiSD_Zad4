@@ -39,7 +39,7 @@ private:
     void add_edge(int vertex_u, int vertex_v, int weight);
 
 
-    void initialize_matrix(int num_of_vectors);
+    int **initialize_matrix(int init_value) const;
 
 };
 
@@ -69,7 +69,7 @@ void Graph::load_graph_matrix_from_stdin() {
     int space_index = line.find(' ');
     num_of_vectors = std::stoi(line.substr(0, space_index));
     number_of_edges = std::stoi(line.substr(space_index + 1, line.size()));
-    initialize_matrix(num_of_vectors);
+    initialize_matrices();
     for (int i = 0; i < number_of_edges; i++) {
         std::vector<int> row;
         std::getline(std::cin, line);
@@ -83,15 +83,19 @@ void Graph::load_graph_matrix_from_stdin() {
     }
 }
 
-void Graph::initialize_matrix(int num_of_vectors) {
-    matrix = new int *[num_of_vectors];
-    for (int i = 0; i < num_of_vectors; ++i) {
-        matrix[i] = new int[num_of_vectors];
-        for (int j = 0; j < num_of_vectors; j++) {
-            matrix[i][j] = 0;
+void Graph::initialize_matrices() {
+    matrix = initialize_matrix(0u);
+}
+
+int **Graph::initialize_matrix(int init_value) const {
+    int **matrix_to_initialize = new int *[vertex_count];
+    for (int i = 0; i < vertex_count; ++i) {
+        matrix_to_initialize[i] = new int[vertex_count];
+        for (int j = 0; j < vertex_count; j++) {
+            matrix_to_initialize[i][j] = init_value;
         }
     }
-    vertex_count = num_of_vectors;
+    return matrix_to_initialize;
 }
 
 void Graph::deallocate_memory() {
