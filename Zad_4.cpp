@@ -88,7 +88,7 @@ void Graph::load_graph_matrix_from_stdin() {
 }
 
 void Graph::initialize_matrices() {
-    matrix = initialize_matrix(0u);
+    matrix = initialize_matrix(0);
 }
 
 int **Graph::initialize_matrix(int init_value) const {
