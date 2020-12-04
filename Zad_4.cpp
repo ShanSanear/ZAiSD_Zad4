@@ -1,17 +1,10 @@
 #include <ctime>
-#include <omp.h>
 #include <vector>
-#include <fstream>
-#include <filesystem>
-#include <iterator>
 #include <iostream>
-#include <chrono>
 #include <sstream>
-#include <queue>
-#include <stack>
 #include <algorithm>
 
-const bool DEBUG = true;
+const bool DEBUG = false;
 
 class Graph {
 
@@ -27,7 +20,6 @@ public:
 
     void deallocate_memory();
 
-
     void check_distances(int src_node);
 
 private:
@@ -39,11 +31,11 @@ private:
 
     void add_edge(int vertex_u, int vertex_v, int weight);
 
-    void initialize_matrices();
+    void print_paths_to_other_nodes(int dist[], int parent[]);
 
-    int **initialize_matrix(int init_value) const;
+    void print_target_paths(int *parent, int j);
 
-    int find_node_with_minimum_distance(const int distance[], const bool p_boolean[]) const;
+    int minDistance(const int *dist, const bool *sptSet);
 };
 
 
@@ -67,11 +59,6 @@ void Graph::show_graph_matrix() {
 void Graph::load_graph_matrix_from_stdin() {
     std::string line;
     std::vector<std::vector<int>> input_data;
-    std::getline(std::cin, line);
-    int space_index = line.find(' ');
-    vertex_count = std::stoi(line.substr(0, space_index));
-    number_of_edges = std::stoi(line.substr(space_index + 1, line.size()));
-    initialize_matrices();
     for (int i = 0; i < number_of_edges; i++) {
         std::vector<int> row;
         std::getline(std::cin, line);
@@ -85,19 +72,18 @@ void Graph::load_graph_matrix_from_stdin() {
     }
 }
 
-void Graph::initialize_matrices() {
-    matrix = initialize_matrix(0);
-}
+int Graph::minDistance(const int dist[],
+                       const bool sptSet[]) {
 
-int **Graph::initialize_matrix(int init_value) const {
-    int **matrix_to_initialize = new int *[vertex_count];
-    for (int i = 0; i < vertex_count; ++i) {
-        matrix_to_initialize[i] = new int[vertex_count];
-        for (int j = 0; j < vertex_count; j++) {
-            matrix_to_initialize[i][j] = init_value;
+    // Initialize min value
+    int min = INT_MAX, min_index;
+
+    for (int v = 0; v < vertex_count; v++) {
+        if (!sptSet[v] && dist[v] <= min) {
+            min = dist[v], min_index = v;
         }
     }
-    return matrix_to_initialize;
+    return min_index;
 }
 
 void Graph::deallocate_memory() {
@@ -109,56 +95,77 @@ void Graph::deallocate_memory() {
 
 void Graph::check_distances(int src_node) {
     int dist[vertex_count];
-    bool visited[vertex_count];
-    for (int i=0; i < vertex_count; i++) {
-        dist[i]=INT_MAX;
-        visited[i] = false;
+    bool sptSet[vertex_count];
+    int parent[vertex_count];
+    for (int i = 0; i < vertex_count; i++) {
+        if (i == src_node) {
+            parent[i] = -1;
+        } else {
+            parent[i] = INT_MAX;
+        }
+        dist[i] = INT_MAX;
+        sptSet[i] = false;
     }
     dist[src_node] = 0;
+    for (int count = 0; count < vertex_count - 1; count++) {
+        int u = minDistance(dist, sptSet);
 
-    for (int ending_vertex=0; ending_vertex < vertex_count; ending_vertex++) {
-        std::vector<int> search_path;
-        search_path.push_back(src_node);
-        int min_distance_node = find_node_with_minimum_distance(dist, visited);
-        visited[min_distance_node] = true;
-        for (int target_node = 0; target_node < vertex_count; target_node++) {
-            if(!visited[target_node] && matrix[min_distance_node][target_node]
-               && dist[min_distance_node] + matrix[min_distance_node][target_node] < dist[target_node]) {
-                dist[target_node] = dist[min_distance_node] + matrix[min_distance_node][target_node];
-                search_path.push_back(min_distance_node);
+        // Mark the picked vertex
+        // as processed
+        sptSet[u] = true;
+
+        for (int v = 0; v < vertex_count; v++)
+
+            if (!sptSet[v] && matrix[u][v] &&
+                dist[u] + matrix[u][v] < dist[v]) {
+                parent[v] = u;
+                dist[v] = dist[u] + matrix[u][v];
             }
-        }
-        printf("Path for %d -> %d\n", src_node + 1, ending_vertex + 1);
-        for (int p : search_path) {
-            printf("%*d\t", 2, p+1);
-        }
-        printf("\n");
     }
-    printf("Shortest paths:\n");
-    for (int i=0; i < vertex_count; i++) {
-        if (i != src_node) {
-            printf("Source: %d \t Destination: %d \t Minimum cost is: %d\n",
-                   src_node + 1, i + 1, dist[i]);
-        }
-    }
-    
+    print_paths_to_other_nodes(dist, parent);
 }
 
-int Graph::find_node_with_minimum_distance(const int *distance, const bool *visited) const {
-    int min = INT_MAX;
-    int index;
-    for (int v = 0; v < vertex_count; v++) {
-        if (!visited[v] && distance[v] <= min) {
-            min = distance[v];
-            index = v;
+Graph::Graph() {
+    matrix = new int *[vertex_count];
+    for (int i = 0; i < vertex_count; ++i) {
+        matrix[i] = new int[vertex_count];
+        for (int j = 0; j < vertex_count; j++) {
+            matrix[i][j] = 0;
         }
     }
-    printf("Index: %d\n", index+1);
-    return index;
+    std::string line;
+    std::getline(std::cin, line);
+    int space_index = line.find(' ');
+    vertex_count = std::stoi(line.substr(0, space_index));
+    number_of_edges = std::stoi(line.substr(space_index + 1, line.size()));
 }
 
+void Graph::print_paths_to_other_nodes(int *dist, int *parent) {
+    int src = 0;
+    for (int target_node = 1; target_node < vertex_count; target_node++) {
+        if (parent[target_node] == INT_MAX) {
+            printf("NIE ISTNIEJE DROGA Z %d DO %d\n", src+1, target_node + 1);
+            continue;
+        }
+        printf("%d", src + 1);
+        print_target_paths(parent, target_node);
+        printf(" %d\n", dist[target_node]);
+    }
 
-Graph::Graph() = default;
+
+}
+
+void Graph::print_target_paths(int *parent, int j) {
+
+    if (parent[j] == -1) {
+        printf("Is source: %d\n", j);
+        return;
+    }
+
+    print_target_paths(parent, parent[j]);
+
+    printf("-%d", j + 1);
+};
 
 
 int main() {
