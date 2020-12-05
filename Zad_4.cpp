@@ -4,10 +4,6 @@
 #include <sstream>
 #include <algorithm>
 
-const bool DEBUG = true;
-
-#define noop() ({;});
-
 class Graph {
 
 public:
@@ -15,62 +11,38 @@ public:
     Graph();
 
     /// Shows graph's distance_matrix
-    void show_graph_matrix();
-
     void load_graph_matrix_from_stdin();
 
-
+    /// Deallocates memory
     void deallocate_memory();
 
-    void check_distances(int src_node);
+    /// Checks for shortest path from source node to any other node
+    void check_shortest_path(int src_node);
 
 private:
-    /// Matrix to be searched
+    /// Matrix with distances
     int **distance_matrix;
     /// Parents matrix
     int **parents_matrix;
-    /// How many edges has already been loaded
+    /// How many vertexes there are
     int vertex_count;
+    /// How many edges there are
     int number_of_edges;
 
+    /// Add edge to the matrix
     void add_edge(int vertex_u, int vertex_v, int weight);
 
-    void print_paths_to_other_nodes(int dist[], int parent[]);
+    /// Process
+    bool floyd_warshall_algorithm();
 
-    void print_target_paths(int *parent, int j);
-
-    int minDistance(const int *dist, const bool *sptSet);
-
-    bool FloydWarshall();
-
-    void FWPath(int i, int j);
+    /// Prints path between source node and target selected during first run
+    void print_path(int source_vertex, int target_vertex, bool first_run);
 };
 
 
 void Graph::add_edge(int vertex_u, int vertex_v, int weight) {
     distance_matrix[vertex_u][vertex_v] = weight;
     parents_matrix[vertex_u][vertex_v] = vertex_u;
-    if (DEBUG) {
-        printf("Adding edge: %d -> %d : %d\n", vertex_u, vertex_v, weight);
-    }
-}
-
-void Graph::show_graph_matrix() {
-    int i, j;
-    printf("DISTANCE GRAPH:\n");
-    for (i = 0; i < vertex_count; i++) {
-        for (j = 0; j < vertex_count; j++) {
-            printf("%*d ", 2, distance_matrix[i][j] == INT_MAX ? -1 : distance_matrix[i][j]);
-        }
-        printf("\n");
-    }
-    printf("PARENTS GRAPH:\n");
-    for (i = 0; i < vertex_count; i++) {
-        for (j = 0; j < vertex_count; j++) {
-            printf("%*d ", 2, parents_matrix[i][j]);
-        }
-        printf("\n");
-    }
 }
 
 void Graph::load_graph_matrix_from_stdin() {
@@ -92,60 +64,60 @@ void Graph::load_graph_matrix_from_stdin() {
 void Graph::deallocate_memory() {
     for (int i = 0; i < vertex_count; ++i) {
         delete[] distance_matrix[i];
+        delete[] parents_matrix[i];
     }
     delete[] distance_matrix;
+    delete[] parents_matrix;
 }
 
-bool Graph::FloydWarshall() {
-    int i, j, k, w;
+bool Graph::floyd_warshall_algorithm() {
+    int combined_weight;
 
-    for (k = 0; k < vertex_count; k++) {
-        for (i = 0; i < vertex_count; i++) {
-            for (j = 0; j < vertex_count; j++) {
+    for (int k = 0; k < vertex_count; k++) {
+        for (int i = 0; i < vertex_count; i++) {
+            for (int j = 0; j < vertex_count; j++) {
                 if ((distance_matrix[i][k] == INT_MAX) || (distance_matrix[k][j] == INT_MAX)) {
                     continue;
                 }
-                w = distance_matrix[i][k] + distance_matrix[k][j];
-                if (distance_matrix[i][j] > w) {
-                    distance_matrix[i][j] = w;
+                combined_weight = distance_matrix[i][k] + distance_matrix[k][j];
+                if (distance_matrix[i][j] > combined_weight) {
+                    distance_matrix[i][j] = combined_weight;
                     parents_matrix[i][j] = parents_matrix[k][j];
                 }
             }
         }
     }
-    for (i = 0; i < vertex_count; i++) {
+    for (int i = 0; i < vertex_count; i++) {
         if (distance_matrix[i][i] < 0) {
             return false;
-        } // Ujemny cykl
+        }
     }
     return true;
 }
 
-// Rekurencyjna procedura odtwarzania minimalnej
-// ścieżki z macierzy poprzedników p
-//----------------------------------------------
-void Graph::FWPath(int i, int j) {
-    if (i == j) {
-        printf("%d==%d\n", i, j);
-        printf("%d ", i);
-    } else if (parents_matrix[i][j] == -1) {
-        printf("NO PATH");
+void Graph::print_path(int source_vertex, int target_vertex, bool first_run) {
+    if (source_vertex == target_vertex) {
+        printf("%d-", source_vertex + 1);
+    } else if (parents_matrix[source_vertex][target_vertex] == -1) {
+        printf("NIE ISTNIEJE DROGA Z ");
     } else {
-        FWPath(i, parents_matrix[i][j]);
-        printf(" ");
+        print_path(source_vertex, parents_matrix[source_vertex][target_vertex], false);
+        if (first_run) {
+            printf("%d", target_vertex + 1);
+        } else {
+            printf("%d-", target_vertex + 1);
+        }
     }
 }
 
-void Graph::check_distances(int src_node) {
-    if (FloydWarshall()) {
-        for (int i = 0; i < vertex_count; i++) {
-            for (int j = 0; j < vertex_count; j++) {
-                printf("%d-%d: ", i, j);
-                FWPath(i, j);
-                if (distance_matrix[i][j] < INT_MAX) {
-                    printf("$%d", distance_matrix[i][j]);
-                }
-                printf("\n");
+void Graph::check_shortest_path(int src_node) {
+    if (floyd_warshall_algorithm()) {
+        for (int j = 1; j < vertex_count; j++) {
+            print_path(src_node, j, true);
+            if (distance_matrix[src_node][j] < INT_MAX) {
+                printf(" %d\n", distance_matrix[src_node][j]);
+            } else {
+                printf("%d DO %d\n", src_node+1, j+1);
             }
         }
     }
@@ -176,14 +148,12 @@ int main() {
     std::string line;
     std::getline(std::cin, line);
     number_of_cases = std::stoi(line);
-    for (int case_num = 0; case_num < number_of_cases; case_num++) {
+    for (int case_num = 1; case_num <= number_of_cases; case_num++) {
         Graph graph = Graph();
+        printf("Graf nr %d\n", case_num);
         graph.load_graph_matrix_from_stdin();
 
-        graph.check_distances(0);
-        if (DEBUG) {
-            graph.show_graph_matrix();
-        }
+        graph.check_shortest_path(0);
         graph.deallocate_memory();
         if (case_num != number_of_cases - 1) {
             printf("\n");
