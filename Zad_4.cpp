@@ -117,7 +117,7 @@ void Graph::check_shortest_path(int src_node) {
             if (distance_matrix[src_node][j] < INT_MAX) {
                 printf(" %d\n", distance_matrix[src_node][j]);
             } else {
-                printf("%d DO %d\n", src_node+1, j+1);
+                printf("%d DO %d\n", src_node + 1, j + 1);
             }
         }
     }
