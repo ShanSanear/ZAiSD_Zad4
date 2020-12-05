@@ -13,7 +13,7 @@ public:
     /// Constructor
     Graph();
 
-    /// Shows graph's distance_matrix
+    /// Loads graph from stdin based on provided constraints
     void load_graph_matrix_from_stdin();
 
     /// Deallocates memory
@@ -32,10 +32,10 @@ private:
     /// How many edges there are
     int number_of_edges;
 
-    /// Add edge to the distance matrix with its weight
+    /// Adds edge to the distance matrix with its weight
     void add_edge(int vertex_u, int vertex_v, int weight);
 
-    /// Algorithm used for this task
+    /// Processes distance matrix so it is possible to determine both path and
     void floyd_warshall_algorithm();
 
     /// Prints path between source node and target selected during first run
