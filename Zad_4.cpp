@@ -33,10 +33,13 @@ private:
     void add_edge(int vertex_u, int vertex_v, int weight);
 
     /// Process
-    bool floyd_warshall_algorithm();
+    void floyd_warshall_algorithm();
 
     /// Prints path between source node and target selected during first run
     void print_path(int source_vertex, int target_vertex, bool first_run);
+
+    /// Prints shortest paths to all the other nodes from source one
+    void print_shortest_paths(int src_node);
 };
 
 
@@ -61,16 +64,7 @@ void Graph::load_graph_matrix_from_stdin() {
     }
 }
 
-void Graph::deallocate_memory() {
-    for (int i = 0; i < vertex_count; ++i) {
-        delete[] distance_matrix[i];
-        delete[] parents_matrix[i];
-    }
-    delete[] distance_matrix;
-    delete[] parents_matrix;
-}
-
-bool Graph::floyd_warshall_algorithm() {
+void Graph::floyd_warshall_algorithm() {
     int combined_weight;
 
     for (int k = 0; k < vertex_count; k++) {
@@ -87,12 +81,6 @@ bool Graph::floyd_warshall_algorithm() {
             }
         }
     }
-    for (int i = 0; i < vertex_count; i++) {
-        if (distance_matrix[i][i] < 0) {
-            return false;
-        }
-    }
-    return true;
 }
 
 void Graph::print_path(int source_vertex, int target_vertex, bool first_run) {
@@ -111,16 +99,28 @@ void Graph::print_path(int source_vertex, int target_vertex, bool first_run) {
 }
 
 void Graph::check_shortest_path(int src_node) {
-    if (floyd_warshall_algorithm()) {
-        for (int j = 1; j < vertex_count; j++) {
-            print_path(src_node, j, true);
-            if (distance_matrix[src_node][j] < INT_MAX) {
-                printf(" %d\n", distance_matrix[src_node][j]);
-            } else {
-                printf("%d DO %d\n", src_node + 1, j + 1);
-            }
+    floyd_warshall_algorithm();
+    print_shortest_paths(src_node);
+}
+
+void Graph::print_shortest_paths(int src_node) {
+    for (int j = 1; j < vertex_count; j++) {
+        print_path(src_node, j, true);
+        if (distance_matrix[src_node][j] < INT_MAX) {
+            printf(" %d\n", distance_matrix[src_node][j]);
+        } else {
+            printf("%d DO %d\n", src_node + 1, j + 1);
         }
     }
+}
+
+void Graph::deallocate_memory() {
+    for (int i = 0; i < vertex_count; ++i) {
+        delete[] distance_matrix[i];
+        delete[] parents_matrix[i];
+    }
+    delete[] distance_matrix;
+    delete[] parents_matrix;
 }
 
 
