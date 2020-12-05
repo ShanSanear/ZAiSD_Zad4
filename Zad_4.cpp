@@ -4,6 +4,9 @@
 #include <sstream>
 #include <algorithm>
 
+/// Offset due to starting counting from 0, but both input and output should start from 1
+const int NUMBERING_OFFSET = 1;
+
 class Graph {
 
 public:
@@ -29,10 +32,10 @@ private:
     /// How many edges there are
     int number_of_edges;
 
-    /// Add edge to the matrix
+    /// Add edge to the distance matrix with its weight
     void add_edge(int vertex_u, int vertex_v, int weight);
 
-    /// Process
+    /// Algorithm used for this task
     void floyd_warshall_algorithm();
 
     /// Prints path between source node and target selected during first run
@@ -60,23 +63,24 @@ void Graph::load_graph_matrix_from_stdin() {
             int number = std::stoi(provided_number);
             row.push_back(number);
         }
-        add_edge(row[0] - 1, row[1] - 1, row[2]);
+        add_edge(row[0] - NUMBERING_OFFSET, row[1] - NUMBERING_OFFSET, row[2]);
     }
 }
 
 void Graph::floyd_warshall_algorithm() {
     int combined_weight;
 
-    for (int k = 0; k < vertex_count; k++) {
-        for (int i = 0; i < vertex_count; i++) {
-            for (int j = 0; j < vertex_count; j++) {
-                if ((distance_matrix[i][k] == INT_MAX) || (distance_matrix[k][j] == INT_MAX)) {
+    for (int iteration = 0; iteration < vertex_count; iteration++) {
+        for (int vertex_u = 0; vertex_u < vertex_count; vertex_u++) {
+            for (int vertex_v = 0; vertex_v < vertex_count; vertex_v++) {
+                if ((distance_matrix[vertex_u][iteration] == INT_MAX) ||
+                    (distance_matrix[iteration][vertex_v] == INT_MAX)) {
                     continue;
                 }
-                combined_weight = distance_matrix[i][k] + distance_matrix[k][j];
-                if (distance_matrix[i][j] > combined_weight) {
-                    distance_matrix[i][j] = combined_weight;
-                    parents_matrix[i][j] = parents_matrix[k][j];
+                combined_weight = distance_matrix[vertex_u][iteration] + distance_matrix[iteration][vertex_v];
+                if (distance_matrix[vertex_u][vertex_v] > combined_weight) {
+                    distance_matrix[vertex_u][vertex_v] = combined_weight;
+                    parents_matrix[vertex_u][vertex_v] = parents_matrix[iteration][vertex_v];
                 }
             }
         }
@@ -85,15 +89,15 @@ void Graph::floyd_warshall_algorithm() {
 
 void Graph::print_path(int source_vertex, int target_vertex, bool first_run) {
     if (source_vertex == target_vertex) {
-        printf("%d-", source_vertex + 1);
+        printf("%d-", source_vertex + NUMBERING_OFFSET);
     } else if (parents_matrix[source_vertex][target_vertex] == -1) {
         printf("NIE ISTNIEJE DROGA Z ");
     } else {
         print_path(source_vertex, parents_matrix[source_vertex][target_vertex], false);
         if (first_run) {
-            printf("%d", target_vertex + 1);
+            printf("%d", target_vertex + NUMBERING_OFFSET);
         } else {
-            printf("%d-", target_vertex + 1);
+            printf("%d-", target_vertex + NUMBERING_OFFSET);
         }
     }
 }
@@ -104,12 +108,15 @@ void Graph::check_shortest_path(int src_node) {
 }
 
 void Graph::print_shortest_paths(int src_node) {
-    for (int j = 1; j < vertex_count; j++) {
+    for (int j = 0; j < vertex_count; j++) {
+        if (j == src_node) {
+            continue;
+        }
         print_path(src_node, j, true);
         if (distance_matrix[src_node][j] < INT_MAX) {
             printf(" %d\n", distance_matrix[src_node][j]);
         } else {
-            printf("%d DO %d\n", src_node + 1, j + 1);
+            printf("%d DO %d\n", src_node + NUMBERING_OFFSET, j + NUMBERING_OFFSET);
         }
     }
 }
