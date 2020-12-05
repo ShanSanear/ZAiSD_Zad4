@@ -57,16 +57,17 @@ void Graph::add_edge(int vertex_u, int vertex_v, int weight) {
 
 void Graph::show_graph_matrix() {
     int i, j;
+    printf("DISTANCE GRAPH:\n");
     for (i = 0; i < vertex_count; i++) {
         for (j = 0; j < vertex_count; j++) {
             printf("%*d ", 2, distance_matrix[i][j] == INT_MAX ? -1 : distance_matrix[i][j]);
         }
         printf("\n");
     }
-
+    printf("PARENTS GRAPH:\n");
     for (i = 0; i < vertex_count; i++) {
         for (j = 0; j < vertex_count; j++) {
-            printf("%*d ", 2, distance_matrix[i][j] == INT_MAX ? -1 : distance_matrix[i][j]);
+            printf("%*d ", 2, parents_matrix[i][j]);
         }
         printf("\n");
     }
@@ -125,6 +126,7 @@ bool Graph::FloydWarshall() {
 //----------------------------------------------
 void Graph::FWPath(int i, int j) {
     if (i == j) {
+        printf("%d==%d\n", i, j);
         printf("%d ", i);
     } else if (parents_matrix[i][j] == -1) {
         printf("NO PATH");
@@ -136,14 +138,16 @@ void Graph::FWPath(int i, int j) {
 
 void Graph::check_distances(int src_node) {
     if (FloydWarshall()) {
-        for (int j = 1; j < vertex_count; j++) {
-            printf("%d-%d: ", 0, j);
-            FWPath(0, j);
-            if (distance_matrix[0][j] < INT_MAX) {
-                printf("$%d", distance_matrix[0][j]);
+        for (int i = 0; i < vertex_count; i++) {
+            for (int j = 0; j < vertex_count; j++) {
+                printf("%d-%d: ", i, j);
+                FWPath(i, j);
+                if (distance_matrix[i][j] < INT_MAX) {
+                    printf("$%d", distance_matrix[i][j]);
+                }
+                printf("\n");
             }
         }
-        printf("\n");
     }
 }
 
